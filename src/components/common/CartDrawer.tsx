@@ -20,6 +20,16 @@ export function CartDrawer() {
     t,
   } = useApp();
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setCartDrawerOpen(false);
+    };
+    if (cartDrawerOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [cartDrawerOpen, setCartDrawerOpen]);
+
   if (!cartDrawerOpen) return null;
 
   const freeShippingThreshold = 500000;
@@ -49,7 +59,7 @@ export function CartDrawer() {
             <button
               onClick={() => setCartDrawerOpen(false)}
               className="p-1.5 text-[#6E6962] hover:text-[#1A1715] hover:bg-[#EFECE4] rounded-full transition-colors"
-              aria-label="Close"
+              aria-label={t("Đóng giỏ hàng", "Close bag")}
             >
               <X className="w-5 h-5" />
             </button>

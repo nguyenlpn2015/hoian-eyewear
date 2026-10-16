@@ -34,6 +34,16 @@ export default function AdminOrdersPage() {
   const [carrierName, setCarrierName] = useState("");
   const [trackingCode, setTrackingCode] = useState("");
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedOrder(null);
+    };
+    if (selectedOrder) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [selectedOrder]);
+
   const filteredOrders = orders.filter((ord) => {
     const matchesSearch =
       ord.orderRef.toLowerCase().includes(searchTerm.toLowerCase()) ||

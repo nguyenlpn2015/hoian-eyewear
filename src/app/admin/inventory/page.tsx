@@ -26,6 +26,16 @@ function InventoryContent() {
   const [adjustNotes, setAdjustNotes] = useState("");
   const [toastMessage, setToastMessage] = useState("");
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setActiveModalVariantId(null);
+    };
+    if (activeModalVariantId) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [activeModalVariantId]);
+
   const allVariants = MOCK_PRODUCTS.flatMap((p) =>
     p.variants.map((v) => ({
       ...v,

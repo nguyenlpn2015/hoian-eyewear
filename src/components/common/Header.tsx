@@ -23,6 +23,16 @@ export function Header() {
 
   const isAdmin = pathname.startsWith("/admin");
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setMobileMenuOpen(false);
+    };
+    if (mobileMenuOpen) {
+      window.addEventListener("keydown", handleKeyDown);
+    }
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [mobileMenuOpen]);
+
   return (
     <header className="sticky top-0 z-40 w-full bg-[#FDFBF7]/95 backdrop-blur-md border-b border-[#E6E0D5]">
       {/* Top Announcement Bar */}
@@ -42,7 +52,7 @@ export function Header() {
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="lg:hidden p-2 text-[#1A1715] hover:bg-[#F7F4EE] rounded-md"
-              aria-label="Toggle Menu"
+              aria-label={t("Mở/Đóng danh mục", "Toggle Menu")}
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
             </button>
