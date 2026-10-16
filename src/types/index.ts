@@ -154,3 +154,4 @@ export interface CartItem {
   quantity: number;
   imageUrl: string;
 }
+

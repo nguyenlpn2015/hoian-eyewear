@@ -62,3 +62,4 @@ export function PaymentStatusBadge({ status }: { status: PaymentStatus }) {
 
   return <Badge variant={config.variant}>{config.label_vi}</Badge>;
 }
+

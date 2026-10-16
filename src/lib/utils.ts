@@ -77,3 +77,4 @@ export function maskAddress(address: string): string {
   }
   return "*** " + address;
 }
+

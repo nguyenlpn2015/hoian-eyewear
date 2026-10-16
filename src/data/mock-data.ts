@@ -583,3 +583,4 @@ export const VIETNAM_PROVINCES = [
   { code: "QUANGNINH", name: "Quảng Ninh", zone: 2 },
   { code: "HAIPHONG", name: "Hải Phòng", zone: 2 },
 ];
+

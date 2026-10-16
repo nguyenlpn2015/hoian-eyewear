@@ -47,7 +47,7 @@ export default function HomePage() {
             <span>{t("Bộ Sưu Tập Nắng Phố Cổ 2026", "Hoi An Summer Sunlight 2026")}</span>
           </div>
 
-          <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold text-[#FDFBF7] tracking-tight font-serif leading-tight">
+          <h1 className="text-3xl sm:text-5xl md:text-6xl font-bold text-[#FDFBF7] font-serif leading-tight">
             {t(
               "Bảo Vệ Đôi Mắt Dưới Ánh Nắng Phố Cổ & Nắng Biển",
               "Shield Your Eyes Under Hoi An Sun & Coastal Waves"

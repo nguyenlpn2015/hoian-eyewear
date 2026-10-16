@@ -281,3 +281,4 @@ export default function AdminInventoryPage() {
     </Suspense>
   );
 }
+
