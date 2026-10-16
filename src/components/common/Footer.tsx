@@ -3,7 +3,7 @@
 import React from "react";
 import Link from "next/link";
 import { useApp } from "@/context/AppContext";
-import { MapPin, Phone, Clock, Shield, Sparkles, CheckCircle2 } from "lucide-react";
+import { MapPin, Phone, Clock, Sparkles, CheckCircle2 } from "lucide-react";
 
 export function Footer() {
   const { t } = useApp();

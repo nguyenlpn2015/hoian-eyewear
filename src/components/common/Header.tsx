@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useApp } from "@/context/AppContext";
-import { ShoppingBag, Search, Menu, X, Globe, Truck, Store } from "lucide-react";
+import { ShoppingBag, Menu, X, Globe, Truck, Store } from "lucide-react";
 import { Button } from "@/components/ui/Button";
 
 export function Header() {

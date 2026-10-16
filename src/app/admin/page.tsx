@@ -13,7 +13,6 @@ import {
   AlertTriangle,
   ArrowRight,
   PlusCircle,
-  Truck,
   TrendingUp,
 } from "lucide-react";
 
@@ -27,7 +26,6 @@ export default function AdminDashboardPage() {
 
   const pendingOrdersCount = orders.filter((o) => o.orderStatus === "pending").length;
   const pickupOrdersCount = orders.filter((o) => o.fulfillmentType === "pickup" && o.orderStatus !== "completed").length;
-  const deliveryOrdersCount = orders.filter((o) => o.fulfillmentType === "delivery" && o.orderStatus === "shipped").length;
 
   // Identify low stock items (<= 3 available)
   const lowStockItems: Array<{

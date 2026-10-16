@@ -6,7 +6,7 @@ import { useApp } from "@/context/AppContext";
 import { MOCK_PRODUCTS } from "@/data/mock-data";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
-import { Glasses, Search, Plus, Sparkles } from "lucide-react";
+import { Search, Plus, Sparkles } from "lucide-react";
 
 export default function AdminProductsPage() {
   const { t, getAvailableStock } = useApp();

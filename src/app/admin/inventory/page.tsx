@@ -6,14 +6,9 @@ import { useApp } from "@/context/AppContext";
 import { MOCK_PRODUCTS } from "@/data/mock-data";
 import { Button } from "@/components/ui/Button";
 import {
-  Warehouse,
-  Plus,
-  Minus,
   Edit,
   X,
   CheckCircle2,
-  AlertTriangle,
-  History,
 } from "lucide-react";
 
 function InventoryContent() {

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState, use } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -45,13 +45,15 @@ export default function ProductDetailPage({
   const [selectedImageIndex, setSelectedImageIndex] = useState(0);
   const [quantity, setQuantity] = useState(1);
 
-  // If query sku changes
-  useEffect(() => {
-    if (skuQuery && product) {
+  // If query sku changes during navigation
+  const [prevSku, setPrevSku] = useState(skuQuery);
+  if (skuQuery !== prevSku) {
+    setPrevSku(skuQuery);
+    if (product) {
       const idx = product.variants.findIndex((v) => v.sku === skuQuery);
       if (idx >= 0) setSelectedVariantIndex(idx);
     }
-  }, [skuQuery, product]);
+  }
 
   if (!product) {
     return (

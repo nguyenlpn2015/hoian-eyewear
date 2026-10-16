@@ -6,7 +6,6 @@ import Link from "next/link";
 import { Product } from "@/types";
 import { formatCurrency } from "@/lib/utils";
 import { useApp } from "@/context/AppContext";
-import { Badge } from "@/components/ui/Badge";
 import { Sparkles } from "lucide-react";
 
 export function ProductCard({ product }: { product: Product }) {

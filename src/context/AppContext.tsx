@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState } from "react";
 import {
   Language,
   CartItem,
@@ -49,29 +49,29 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [language, setLanguage] = useState<Language>("vi");
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const [language, setLanguage] = useState<Language>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedLang = localStorage.getItem("hae_lang") as Language;
+        if (savedLang === "vi" || savedLang === "en") return savedLang;
+      } catch {}
+    }
+    return "vi";
+  });
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window !== "undefined") {
+      try {
+        const savedCart = localStorage.getItem("hae_cart");
+        if (savedCart) return JSON.parse(savedCart);
+      } catch {}
+    }
+    return [];
+  });
   const [cartDrawerOpen, setCartDrawerOpen] = useState(false);
   const [inventory, setInventory] = useState<Record<string, InventoryBalance>>(
     INITIAL_INVENTORY_BALANCES
   );
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
-
-  // Load language and cart from localStorage on mount
-  useEffect(() => {
-    try {
-      const savedLang = localStorage.getItem("hae_lang") as Language;
-      if (savedLang && (savedLang === "vi" || savedLang === "en")) {
-        setLanguage(savedLang);
-      }
-      const savedCart = localStorage.getItem("hae_cart");
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-    } catch {
-      // LocalStorage error ignore
-    }
-  }, []);
 
   // Save language changes
   const handleSetLanguage = (lang: Language) => {
@@ -181,6 +181,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
   // Concurrency & Stock mutations (simulated in state)
   const adjustInventory = (variantId: string, delta: number, reason: string) => {
+    if (process.env.NODE_ENV !== "production") {
+      console.info(`[Stock Audit] ${variantId} delta: ${delta}, reason: ${reason}`);
+    }
     setInventory((prev) => {
       const current = prev[variantId] || {
         variantId,

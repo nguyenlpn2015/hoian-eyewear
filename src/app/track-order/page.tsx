@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/context/AppContext";
@@ -10,13 +10,9 @@ import { OrderStatusBadge, PaymentStatusBadge } from "@/components/ui/Badge";
 import { Order } from "@/types";
 import {
   Search,
-  Package,
   Truck,
-  CheckCircle2,
-  Clock,
   ShieldCheck,
   AlertTriangle,
-  Store,
   ExternalLink,
 } from "lucide-react";
 
@@ -29,16 +25,37 @@ function TrackOrderContent() {
 
   const [orderRefInput, setOrderRefInput] = useState(refParam);
   const [phoneInput, setPhoneInput] = useState(phoneParam);
-  const [foundOrder, setFoundOrder] = useState<Order | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
+  const [foundOrder, setFoundOrder] = useState<Order | null>(() => {
+    if (refParam && phoneParam) {
+      const cleanRef = refParam.trim().toUpperCase();
+      const cleanPhone = phoneParam.replace(/\D/g, "");
+      return (
+        orders.find(
+          (o) =>
+            o.orderRef.toUpperCase() === cleanRef &&
+            o.customerPhone.replace(/\D/g, "") === cleanPhone
+        ) || null
+      );
+    }
+    return null;
+  });
+  const [errorMessage, setErrorMessage] = useState(() => {
+    if (refParam && phoneParam) {
+      const cleanRef = refParam.trim().toUpperCase();
+      const cleanPhone = phoneParam.replace(/\D/g, "");
+      const match = orders.find(
+        (o) =>
+          o.orderRef.toUpperCase() === cleanRef &&
+          o.customerPhone.replace(/\D/g, "") === cleanPhone
+      );
+      if (!match) {
+        return "Thông tin mã đơn hàng hoặc số điện thoại không chính xác. Vui lòng kiểm tra lại tin nhắn hoặc email.";
+      }
+    }
+    return "";
+  });
   const [attemptCount, setAttemptCount] = useState(0);
   const [isLocked, setIsLocked] = useState(false);
-
-  useEffect(() => {
-    if (refParam && phoneParam) {
-      handleLookup(refParam, phoneParam);
-    }
-  }, [refParam, phoneParam]);
 
   const handleLookup = (ref: string, phone: string) => {
     setErrorMessage("");

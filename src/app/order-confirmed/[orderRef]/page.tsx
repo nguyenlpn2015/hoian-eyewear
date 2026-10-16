@@ -14,7 +14,6 @@ import {
   Truck,
   ArrowRight,
   Check,
-  Store,
 } from "lucide-react";
 
 export default function OrderConfirmedPage({
