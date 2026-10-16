@@ -153,6 +153,7 @@ CREATE TABLE IF NOT EXISTS public.orders (
     shipping_fee_vnd INTEGER NOT NULL DEFAULT 0 CHECK (shipping_fee_vnd >= 0),
     total_amount_vnd INTEGER NOT NULL CHECK (total_amount_vnd = subtotal_vnd + shipping_fee_vnd),
     customer_notes TEXT,
+    idempotency_key TEXT UNIQUE,
     bank_transfer_expires_at TIMESTAMPTZ,
     created_by_staff_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -215,6 +216,7 @@ CREATE INDEX IF NOT EXISTS idx_orders_ref ON public.orders (order_ref);
 CREATE INDEX IF NOT EXISTS idx_orders_status ON public.orders (order_status, payment_status);
 CREATE INDEX IF NOT EXISTS idx_orders_created_at ON public.orders (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_orders_guest_lookup ON public.orders (order_ref, customer_phone_last4);
+CREATE INDEX IF NOT EXISTS idx_orders_idempotency ON public.orders (idempotency_key);
 CREATE INDEX IF NOT EXISTS idx_order_items_order ON public.order_items (order_id);
 CREATE INDEX IF NOT EXISTS idx_order_items_variant ON public.order_items (variant_id);
 
@@ -372,7 +374,16 @@ DECLARE
     v_order_ref TEXT;
     v_order_id UUID;
     v_total_amount INTEGER;
+    v_actual_actor_id UUID;
+    v_actor_role TEXT := 'CASHIER';
 BEGIN
+    -- 0. Kiểm tra quyền hạn: Chỉ nhân viên (CASHIER hoặc STORE_MANAGER) hoặc service_role được gọi
+    IF NOT public.is_staff() AND auth.role() != 'service_role' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'UNAUTHORIZED_NOT_STAFF');
+    END IF;
+
+    v_actual_actor_id := COALESCE(auth.uid(), p_actor_id);
+
     IF p_quantity <= 0 THEN
         RETURN jsonb_build_object('success', false, 'error', 'QUANTITY_MUST_BE_GREATER_THAN_ZERO');
     END IF;
@@ -417,7 +428,7 @@ BEGIN
     ) VALUES (
         p_variant_id, 'HOI_AN_MAIN', 'SALE_IN_STORE', -p_quantity,
         v_balance.quantity_on_hand - p_quantity, v_balance.quantity_reserved, v_order_ref,
-        p_actor_id, 'CASHIER', 'Bán hàng trực tiếp tại quầy Boutique Hội An'
+        v_actual_actor_id, v_actor_role, 'Bán hàng trực tiếp tại quầy Boutique Hội An'
     );
 
     -- 6. Tạo đơn hàng hoàn tất
@@ -428,7 +439,7 @@ BEGIN
     ) VALUES (
         v_order_ref, 'in_store', 'pickup', 'completed', p_payment_method, 'paid',
         p_customer_name, p_customer_phone, right(p_customer_phone, 4),
-        v_total_amount, 0, v_total_amount, p_actor_id
+        v_total_amount, 0, v_total_amount, v_actual_actor_id
     ) RETURNING id INTO v_order_id;
 
     -- 7. Lưu snapshot sản phẩm
@@ -464,7 +475,8 @@ CREATE OR REPLACE FUNCTION public.create_online_order(
     p_shipping_full_address TEXT,
     p_shipping_fee INTEGER,
     p_customer_notes TEXT,
-    p_items JSONB -- Mảng object: [{ "variant_id": "...", "quantity": 1 }]
+    p_items JSONB, -- Mảng object: [{ "variant_id": "...", "quantity": 1 }]
+    p_idempotency_key TEXT DEFAULT NULL
 )
 RETURNS JSONB
 LANGUAGE plpgsql
@@ -480,6 +492,23 @@ DECLARE
     v_total_amount INTEGER := 0;
     v_expires_at TIMESTAMPTZ := NULL;
 BEGIN
+    -- 0. Kiểm tra Idempotency: Nếu idempotency_key đã tồn tại, trả về đơn hàng cũ để tránh trừ kho trùng lặp
+    IF p_idempotency_key IS NOT NULL THEN
+        SELECT id, order_ref, total_amount_vnd INTO v_order_id, v_order_ref, v_total_amount
+        FROM public.orders
+        WHERE idempotency_key = p_idempotency_key;
+
+        IF FOUND THEN
+            RETURN jsonb_build_object(
+                'success', true,
+                'order_ref', v_order_ref,
+                'order_id', v_order_id,
+                'total_amount', v_total_amount,
+                'idempotent_replayed', true
+            );
+        END IF;
+    END IF;
+
     IF jsonb_array_length(p_items) = 0 THEN
         RETURN jsonb_build_object('success', false, 'error', 'CART_IS_EMPTY');
     END IF;
@@ -529,13 +558,13 @@ BEGIN
         order_ref, channel, fulfillment_type, order_status, payment_method, payment_status,
         customer_name, customer_phone, customer_phone_last4, customer_email,
         shipping_province, shipping_district, shipping_ward, shipping_street, shipping_full_address,
-        subtotal_vnd, shipping_fee_vnd, total_amount_vnd, customer_notes, bank_transfer_expires_at
+        subtotal_vnd, shipping_fee_vnd, total_amount_vnd, customer_notes, idempotency_key, bank_transfer_expires_at
     ) VALUES (
         v_order_ref, 'online', p_fulfillment_type, 'pending', p_payment_method, 'pending',
         trim(p_customer_name), regexp_replace(p_customer_phone, '\D', '', 'g'),
         right(regexp_replace(p_customer_phone, '\D', '', 'g'), 4), p_customer_email,
         p_shipping_province, p_shipping_district, p_shipping_ward, p_shipping_street, p_shipping_full_address,
-        v_subtotal, p_shipping_fee, v_total_amount, p_customer_notes, v_expires_at
+        v_subtotal, p_shipping_fee, v_total_amount, p_customer_notes, p_idempotency_key, v_expires_at
     ) RETURNING id INTO v_order_id;
 
     -- 5. Cập nhật giữ chỗ kho & tạo chi tiết đơn hàng
@@ -599,6 +628,11 @@ DECLARE
     v_item RECORD;
     v_balance RECORD;
 BEGIN
+    -- 0. Kiểm tra quyền: Chỉ Quản lý cửa hàng (STORE_MANAGER) hoặc tiến trình tự động SYSTEM / service_role được hủy đơn
+    IF NOT public.is_store_manager() AND p_actor_role != 'SYSTEM' AND auth.role() != 'service_role' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'UNAUTHORIZED_STORE_MANAGER_ONLY');
+    END IF;
+
     SELECT * INTO v_order FROM public.orders WHERE id = p_order_id FOR UPDATE;
 
     IF NOT FOUND THEN
@@ -705,4 +739,87 @@ BEGIN
     );
 END;
 $$;
+
+-- 5.5. XÁC MINH THANH TOÁN CHUYỂN KHOẢN VIETQR (CHỈ STORE_MANAGER)
+CREATE OR REPLACE FUNCTION public.verify_bank_transfer_payment(
+    p_order_id UUID,
+    p_transaction_ref TEXT,
+    p_note TEXT DEFAULT 'Xác nhận khớp giao dịch chuyển khoản VietQR'
+)
+RETURNS JSONB
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+    v_order RECORD;
+    v_actor_id UUID := auth.uid();
+BEGIN
+    IF NOT public.is_store_manager() AND auth.role() != 'service_role' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'UNAUTHORIZED_STORE_MANAGER_ONLY');
+    END IF;
+
+    SELECT * INTO v_order FROM public.orders WHERE id = p_order_id FOR UPDATE;
+
+    IF NOT FOUND THEN
+        RETURN jsonb_build_object('success', false, 'error', 'ORDER_NOT_FOUND');
+    END IF;
+
+    IF v_order.order_status = 'cancelled' THEN
+        RETURN jsonb_build_object('success', false, 'error', 'CANNOT_VERIFY_CANCELLED_ORDER');
+    END IF;
+
+    IF v_order.payment_status = 'verified' OR v_order.payment_status = 'paid' THEN
+        RETURN jsonb_build_object('success', true, 'message', 'ALREADY_VERIFIED', 'order_ref', v_order.order_ref);
+    END IF;
+
+    -- Cập nhật trạng thái thanh toán và chuyển đơn hàng sang confirmed
+    UPDATE public.orders
+    SET payment_status = 'verified',
+        order_status = CASE WHEN order_status = 'pending' THEN 'confirmed' ELSE order_status END,
+        updated_at = now()
+    WHERE id = p_order_id;
+
+    -- Ghi nhật ký kiểm toán thanh toán
+    INSERT INTO public.payment_status_history (
+        order_id, from_status, to_status, actor_id, actor_role, amount_vnd, transaction_reference, note
+    ) VALUES (
+        p_order_id, v_order.payment_status, 'verified', v_actor_id, 'STORE_MANAGER',
+        v_order.total_amount_vnd, p_transaction_ref, p_note
+    );
+
+    -- Ghi nhật ký trạng thái đơn hàng nếu có chuyển đổi
+    IF v_order.order_status = 'pending' THEN
+        INSERT INTO public.order_status_history (
+            order_id, from_status, to_status, actor_id, actor_role, note
+        ) VALUES (
+            p_order_id, 'pending', 'confirmed', v_actor_id, 'STORE_MANAGER', 'Đã nhận đủ thanh toán chuyển khoản'
+        );
+    END IF;
+
+    RETURN jsonb_build_object(
+        'success', true,
+        'order_ref', v_order.order_ref,
+        'payment_status', 'verified',
+        'order_status', 'confirmed'
+    );
+END;
+$$;
+
+-- ==============================================================================
+-- 6. PHÂN QUYỀN THỰC THI THỦ TỤC NGUYÊN TỬ (RPC FUNCTION SECURITY PRIVILEGES)
+-- ==============================================================================
+-- Cấm thực thi trực tiếp từ người dùng nặc danh (anon) đối với các thủ tục nhạy cảm
+REVOKE EXECUTE ON FUNCTION public.record_in_store_sale FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.record_in_store_sale TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.cancel_order_and_release_stock FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.cancel_order_and_release_stock TO authenticated, service_role;
+
+REVOKE EXECUTE ON FUNCTION public.verify_bank_transfer_payment FROM PUBLIC, anon;
+GRANT EXECUTE ON FUNCTION public.verify_bank_transfer_payment TO authenticated, service_role;
+
+-- Các thủ tục phục vụ khách mua hàng trực tuyến & tra cứu đơn hàng công khai
+GRANT EXECUTE ON FUNCTION public.create_online_order TO PUBLIC, anon, authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.verify_guest_order_tracking TO PUBLIC, anon, authenticated, service_role;
+
 

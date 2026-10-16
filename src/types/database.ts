@@ -432,6 +432,7 @@ export interface Database {
           shipping_fee_vnd: number;
           total_amount_vnd: number;
           customer_notes: string | null;
+          idempotency_key: string | null;
           bank_transfer_expires_at: string | null;
           created_by_staff_id: string | null;
           created_at: string;
@@ -460,6 +461,7 @@ export interface Database {
           shipping_fee_vnd?: number;
           total_amount_vnd: number;
           customer_notes?: string | null;
+          idempotency_key?: string | null;
           bank_transfer_expires_at?: string | null;
           created_by_staff_id?: string | null;
           created_at?: string;
@@ -488,6 +490,7 @@ export interface Database {
           shipping_fee_vnd?: number;
           total_amount_vnd?: number;
           customer_notes?: string | null;
+          idempotency_key?: string | null;
           bank_transfer_expires_at?: string | null;
           created_by_staff_id?: string | null;
           created_at?: string;
@@ -669,6 +672,7 @@ export interface Database {
           p_shipping_fee: number;
           p_customer_notes: string | null;
           p_items: Json;
+          p_idempotency_key?: string | null;
         };
         Returns: Json;
       };
@@ -685,6 +689,14 @@ export interface Database {
         Args: {
           p_order_ref: string;
           p_phone_last4: string;
+        };
+        Returns: Json;
+      };
+      verify_bank_transfer_payment: {
+        Args: {
+          p_order_id: string;
+          p_transaction_ref: string;
+          p_note?: string;
         };
         Returns: Json;
       };

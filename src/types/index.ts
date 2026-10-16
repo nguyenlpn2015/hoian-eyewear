@@ -143,6 +143,7 @@ export interface Order {
   shippingFee: number;
   totalAmount: number;
   customerNotes?: string;
+  idempotencyKey?: string;
   items: OrderItem[];
   bankTransferExpiresAt?: string;
   createdAt: string;

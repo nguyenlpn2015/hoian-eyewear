@@ -1,13 +1,14 @@
 "use client";
 
-import React, { useState, Suspense } from "react";
+import React, { useState, useTransition, Suspense } from "react";
 import Image from "next/image";
 import { useSearchParams } from "next/navigation";
 import { useApp } from "@/context/AppContext";
 import { formatCurrency, formatDate, maskName, maskPhone, maskAddress } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { OrderStatusBadge, PaymentStatusBadge } from "@/components/ui/Badge";
-import { Order } from "@/types";
+import { Order, FulfillmentType, OrderStatus, PaymentStatus } from "@/types";
+import { trackOrderAction } from "@/app/track-order/actions";
 import {
   Search,
   Truck,
@@ -25,6 +26,7 @@ function TrackOrderContent() {
 
   const [orderRefInput, setOrderRefInput] = useState(refParam);
   const [phoneInput, setPhoneInput] = useState(phoneParam);
+  const [isPending, startTransition] = useTransition();
   const [foundOrder, setFoundOrder] = useState<Order | null>(() => {
     if (refParam && phoneParam) {
       const cleanRef = refParam.trim().toUpperCase();
@@ -61,7 +63,7 @@ function TrackOrderContent() {
     setErrorMessage("");
     setFoundOrder(null);
 
-    // Rate limiting simulation (max 5 attempts)
+    // Rate limiting simulation (max 5 attempts on client)
     if (attemptCount >= 5) {
       setIsLocked(true);
       setErrorMessage(
@@ -75,25 +77,63 @@ function TrackOrderContent() {
 
     setAttemptCount((prev) => prev + 1);
 
-    const cleanRef = ref.trim().toUpperCase();
-    const cleanPhone = phone.replace(/\D/g, "");
-
-    const match = orders.find(
-      (o) =>
-        o.orderRef.toUpperCase() === cleanRef &&
-        o.customerPhone.replace(/\D/g, "") === cleanPhone
-    );
-
-    if (match) {
-      setFoundOrder(match);
-    } else {
-      setErrorMessage(
-        t(
-          "Thông tin mã đơn hàng hoặc số điện thoại không chính xác. Vui lòng kiểm tra lại tin nhắn hoặc email.",
-          "No order found matching the provided reference and phone number."
-        )
-      );
-    }
+    startTransition(async () => {
+      const res = await trackOrderAction(ref, phone);
+      if (res.success && res.order) {
+        const orderData = res.order;
+        const match = orders.find(
+          (o) => o.orderRef.toUpperCase() === orderData.order_ref.toUpperCase()
+        );
+        if (match) {
+          setFoundOrder(match);
+        } else {
+          setFoundOrder({
+            id: "order-" + orderData.order_ref,
+            orderRef: orderData.order_ref,
+            channel: "online",
+            fulfillmentType: orderData.fulfillment_type as FulfillmentType,
+            orderStatus: orderData.order_status as OrderStatus,
+            paymentMethod: "bank_transfer",
+            paymentStatus: orderData.payment_status as PaymentStatus,
+            customerName: orderData.masked_name,
+            customerPhone: orderData.masked_phone,
+            shippingAddress: {
+              province: "",
+              district: "",
+              ward: "",
+              street: "",
+              fullAddress: orderData.masked_address,
+            },
+            shippingCarrier: orderData.shipping_carrier || undefined,
+            trackingCode: orderData.tracking_code || undefined,
+            subtotal: orderData.total_amount,
+            shippingFee: 0,
+            totalAmount: orderData.total_amount,
+            items: orderData.items.map((it, idx) => ({
+              id: `item-${idx}`,
+              variantId: `var-${it.sku}`,
+              sku: it.sku,
+              productName: it.product_name,
+              variantDescription: it.variant_description,
+              unitPrice: it.unit_price,
+              quantity: it.quantity,
+              totalPrice: it.total_price,
+              imageUrl: it.image_url,
+            })),
+            createdAt: orderData.created_at,
+            updatedAt: orderData.created_at,
+          });
+        }
+      } else {
+        setErrorMessage(
+          res.error ||
+            t(
+              "Thông tin mã đơn hàng hoặc số điện thoại không chính xác. Vui lòng kiểm tra lại tin nhắn hoặc email.",
+              "No order found matching the provided reference and phone number."
+            )
+        );
+      }
+    });
   };
 
   const onSubmit = (e: React.FormEvent) => {
@@ -185,11 +225,15 @@ function TrackOrderContent() {
             type="submit"
             variant="primary"
             size="md"
-            disabled={isLocked}
+            disabled={isLocked || isPending}
             className="w-full"
           >
             <Search className="w-4 h-4 mr-1" />
-            <span>{t("Tra Cứu Tiến Độ Đơn Hàng", "Track Order")}</span>
+            <span>
+              {isPending
+                ? t("Đang tra cứu bảo mật...", "Verifying...")
+                : t("Tra Cứu Tiến Độ Đơn Hàng", "Track Order")}
+            </span>
           </Button>
         </form>
 
