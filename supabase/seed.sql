@@ -554,3 +554,4 @@ VALUES
 ('d0000000-0000-0000-0000-000000000002', 'pending', 'ready_for_pickup', 'CASHIER', 'Đã soạn kính và đóng gói sẵn sàng', now() - interval '2 hours'),
 ('d0000000-0000-0000-0000-000000000003', NULL, 'completed', 'CASHIER', 'Thanh toán trực tiếp tại quầy Hội An', now() - interval '1 hour')
 ON CONFLICT DO NOTHING;
+

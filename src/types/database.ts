@@ -1,6 +1,7 @@
 // ==============================================================================
 // HỘI AN EYEWEAR — SUPABASE DATABASE TYPE DEFINITIONS
 // Database: PostgreSQL 16 (Strict integer VND, Bilingual VI/EN)
+// Compatible with @supabase/supabase-js v2.118+ GenericSchema
 // ==============================================================================
 
 export type Json =
@@ -72,6 +73,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       categories: {
         Row: {
@@ -107,6 +109,7 @@ export interface Database {
           display_order?: number;
           created_at?: string;
         };
+        Relationships: [];
       };
       products: {
         Row: {
@@ -169,6 +172,15 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "products_category_id_fkey";
+            columns: ["category_id"];
+            isOneToOne: false;
+            referencedRelation: "categories";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       product_variants: {
         Row: {
@@ -228,6 +240,15 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "product_variants_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       product_images: {
         Row: {
@@ -260,6 +281,15 @@ export interface Database {
           alt_text_en?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "product_images_product_id_fkey";
+            columns: ["product_id"];
+            isOneToOne: false;
+            referencedRelation: "products";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       stock_locations: {
         Row: {
@@ -283,6 +313,7 @@ export interface Database {
           is_active?: boolean;
           created_at?: string;
         };
+        Relationships: [];
       };
       inventory_balances: {
         Row: {
@@ -307,6 +338,22 @@ export interface Database {
           quantity_reserved?: number;
           updated_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_balances_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "inventory_balances_location_id_fkey";
+            columns: ["location_id"];
+            isOneToOne: false;
+            referencedRelation: "stock_locations";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       inventory_movements: {
         Row: {
@@ -351,6 +398,15 @@ export interface Database {
           reason?: string;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       orders: {
         Row: {
@@ -437,6 +493,7 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
         };
+        Relationships: [];
       };
       order_items: {
         Row: {
@@ -478,6 +535,22 @@ export interface Database {
           image_url?: string;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "order_items_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "order_items_variant_id_fkey";
+            columns: ["variant_id"];
+            isOneToOne: false;
+            referencedRelation: "product_variants";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       order_status_history: {
         Row: {
@@ -510,6 +583,15 @@ export interface Database {
           note?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "order_status_history_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          }
+        ];
       };
       payment_status_history: {
         Row: {
@@ -548,8 +630,18 @@ export interface Database {
           note?: string | null;
           created_at?: string;
         };
+        Relationships: [
+          {
+            foreignKeyName: "payment_status_history_order_id_fkey";
+            columns: ["order_id"];
+            isOneToOne: false;
+            referencedRelation: "orders";
+            referencedColumns: ["id"];
+          }
+        ];
       };
     };
+    Views: Record<string, never>;
     Functions: {
       record_in_store_sale: {
         Args: {
@@ -597,5 +689,7 @@ export interface Database {
         Returns: Json;
       };
     };
+    Enums: Record<string, never>;
+    CompositeTypes: Record<string, never>;
   };
 }
