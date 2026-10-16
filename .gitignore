@@ -43,3 +43,8 @@ next-env.d.ts
 
 # Documentation directory (strictly excluded from Git as requested)
 docs/
+
+# Supabase CLI temporary files
+supabase/.temp/
+supabase/.branches/
+

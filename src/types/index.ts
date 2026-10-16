@@ -93,8 +93,19 @@ export type PaymentStatus =
   | 'partially_refunded';
 
 export type FulfillmentType = 'delivery' | 'pickup';
-export type PaymentMethod = 'cod' | 'bank_transfer';
+export type PaymentMethod = 'cod' | 'bank_transfer' | 'cash';
 export type Channel = 'online' | 'in_store';
+export type StaffRole = 'CASHIER' | 'STORE_MANAGER';
+
+export interface StaffProfile {
+  id: string;
+  fullName: string;
+  role: StaffRole;
+  phone?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface OrderItem {
   id: string;
