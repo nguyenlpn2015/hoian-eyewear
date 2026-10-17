@@ -70,8 +70,8 @@ export async function updateSession(request: NextRequest) {
     // Supabase offline or unreachable in local dev
   }
 
-  // Support local development preview session fallback
-  if (!user) {
+  // Support local development preview session fallback ONLY in non-production
+  if (!user && process.env.NODE_ENV !== "production") {
     const devRoleCookie = request.cookies.get("hae_dev_role")?.value;
     if (devRoleCookie === "STORE_MANAGER" || devRoleCookie === "CASHIER") {
       role = devRoleCookie as StaffRole;

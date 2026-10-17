@@ -1,6 +1,6 @@
 "use client";
 
-import React, { createContext, useContext, useState } from "react";
+import React, { createContext, useContext, useState, useEffect } from "react";
 import {
   Language,
   CartItem,
@@ -16,6 +16,7 @@ import {
   MOCK_ORDERS,
   MOCK_PRODUCTS,
 } from "@/data/mock-data";
+import { createClient } from "@/lib/supabase/client";
 
 interface AppContextType {
   language: Language;
@@ -72,6 +73,37 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     INITIAL_INVENTORY_BALANCES
   );
   const [orders, setOrders] = useState<Order[]>(MOCK_ORDERS);
+
+  // Sync live inventory balances from Supabase Cloud on mount
+  useEffect(() => {
+    async function syncLiveStock() {
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase
+          .from("inventory_balances")
+          .select("*")
+          .eq("location_id", "HOI_AN_MAIN");
+
+        if (!error && data && data.length > 0) {
+          const balances: Record<string, InventoryBalance> = {};
+          for (const row of data) {
+            balances[row.variant_id] = {
+              variantId: row.variant_id,
+              locationId: row.location_id,
+              quantityOnHand: row.quantity_on_hand,
+              quantityReserved: row.quantity_reserved,
+              quantityAvailable: Math.max(0, row.quantity_on_hand - row.quantity_reserved),
+              updatedAt: row.updated_at,
+            };
+          }
+          setInventory((prev) => ({ ...prev, ...balances }));
+        }
+      } catch {
+        // Graceful fallback to initial balances if offline
+      }
+    }
+    syncLiveStock();
+  }, []);
 
   // Save language changes
   const handleSetLanguage = (lang: Language) => {

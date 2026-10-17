@@ -149,49 +149,51 @@ export default function AdminLoginPage() {
             </button>
           </form>
 
-          {/* Development Quick-Login Helper */}
-          <div className="mt-8 pt-6 border-t border-[#E6E0D5]">
-            <div className="flex items-center gap-2 mb-3">
-              <span className="text-[11px] font-bold text-[#8C827A] uppercase tracking-wider">
-                Kiểm Thử Nhanh (Dev Quick-Login)
-              </span>
-            </div>
-            <p className="text-[11px] text-[#8C827A] mb-3 leading-relaxed">
-              Dành cho môi trường phát triển & kiểm duyệt tính năng phân quyền:
-            </p>
+          {/* Development Quick-Login Helper (Non-production only) */}
+          {process.env.NODE_ENV !== "production" && (
+            <div className="mt-8 pt-6 border-t border-[#E6E0D5]">
+              <div className="flex items-center gap-2 mb-3">
+                <span className="text-[11px] font-bold text-[#8C827A] uppercase tracking-wider">
+                  Kiểm Thử Nhanh (Dev Quick-Login)
+                </span>
+              </div>
+              <p className="text-[11px] text-[#8C827A] mb-3 leading-relaxed">
+                Dành cho môi trường phát triển & kiểm duyệt tính năng phân quyền:
+              </p>
 
-            <div className="grid grid-cols-2 gap-2.5">
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => handleDevLogin("STORE_MANAGER")}
-                className="p-2.5 text-left bg-[#FAF8F5] hover:bg-[#F2ECE1] border border-[#DDD6C8] rounded-xl transition-all group"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1715] group-hover:text-[#9E2A2B]">
-                  <UserCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
-                  <span>Quản Lý Cửa Hàng</span>
-                </div>
-                <div className="text-[10px] text-[#8C827A] mt-0.5">
-                  STORE_MANAGER (Toàn quyền)
-                </div>
-              </button>
+              <div className="grid grid-cols-2 gap-2.5">
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => handleDevLogin("STORE_MANAGER")}
+                  className="p-2.5 text-left bg-[#FAF8F5] hover:bg-[#F2ECE1] border border-[#DDD6C8] rounded-xl transition-all group"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1715] group-hover:text-[#9E2A2B]">
+                    <UserCheck className="w-3.5 h-3.5 text-[#D4AF37]" />
+                    <span>Quản Lý Cửa Hàng</span>
+                  </div>
+                  <div className="text-[10px] text-[#8C827A] mt-0.5">
+                    STORE_MANAGER (Toàn quyền)
+                  </div>
+                </button>
 
-              <button
-                type="button"
-                disabled={isPending}
-                onClick={() => handleDevLogin("CASHIER")}
-                className="p-2.5 text-left bg-[#FAF8F5] hover:bg-[#F2ECE1] border border-[#DDD6C8] rounded-xl transition-all group"
-              >
-                <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1715] group-hover:text-[#9E2A2B]">
-                  <Store className="w-3.5 h-3.5 text-[#2A9D8F]" />
-                  <span>Thu Ngân POS</span>
-                </div>
-                <div className="text-[10px] text-[#8C827A] mt-0.5">
-                  CASHIER (Chỉ vào quầy POS)
-                </div>
-              </button>
+                <button
+                  type="button"
+                  disabled={isPending}
+                  onClick={() => handleDevLogin("CASHIER")}
+                  className="p-2.5 text-left bg-[#FAF8F5] hover:bg-[#F2ECE1] border border-[#DDD6C8] rounded-xl transition-all group"
+                >
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-[#1A1715] group-hover:text-[#9E2A2B]">
+                    <Store className="w-3.5 h-3.5 text-[#2A9D8F]" />
+                    <span>Thu Ngân POS</span>
+                  </div>
+                  <div className="text-[10px] text-[#8C827A] mt-0.5">
+                    CASHIER (Chỉ vào quầy POS)
+                  </div>
+                </button>
+              </div>
             </div>
-          </div>
+          )}
         </div>
 
         {/* Footer */}

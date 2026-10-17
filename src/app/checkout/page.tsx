@@ -8,6 +8,7 @@ import { useApp } from "@/context/AppContext";
 import { formatCurrency } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { VIETNAM_PROVINCES } from "@/data/mock-data";
+import { createOnlineOrderAction } from "./actions";
 import {
   Truck,
   Store,
@@ -20,7 +21,7 @@ import {
 } from "lucide-react";
 
 export default function CheckoutPage() {
-  const { cart, cartTotal, createOnlineOrder, t } = useApp();
+  const { cart, cartTotal, clearCart, t } = useApp();
   const router = useRouter();
 
   const [fulfillmentType, setFulfillmentType] = useState<"delivery" | "pickup">("delivery");
@@ -69,7 +70,7 @@ export default function CheckoutPage() {
 
   const finalTotal = cartTotal + shippingFee;
 
-  const handleSubmitOrder = (e: React.FormEvent) => {
+  const handleSubmitOrder = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
 
@@ -105,34 +106,46 @@ export default function CheckoutPage() {
 
     setIsSubmitting(true);
 
-    const provObj = VIETNAM_PROVINCES.find((p) => p.code === selectedProvince);
-    const fullAddress =
-      fulfillmentType === "delivery"
-        ? `${street.trim()}, ${ward.trim()}, ${district.trim()}, ${provObj?.name || "Việt Nam"}`
-        : "123 Trần Phú, Phường Minh An, TP. Hội An, Quảng Nam";
+    try {
+      const items = cart.map((item) => ({
+        variantId: item.variantId,
+        quantity: item.quantity,
+      }));
 
-    const res = createOnlineOrder({
-      fulfillmentType,
-      paymentMethod,
-      customerName: customerName.trim(),
-      customerPhone: cleanPhone,
-      customerEmail: customerEmail.trim() || undefined,
-      shippingAddress: {
-        province: provObj?.name || "Đà Nẵng",
+      const res = await createOnlineOrderAction({
+        customerName: customerName.trim(),
+        customerPhone: cleanPhone,
+        customerEmail: customerEmail.trim() || undefined,
+        fulfillmentType,
+        paymentMethod,
+        provinceCode: selectedProvince,
         district: district.trim(),
         ward: ward.trim(),
         street: street.trim(),
-        fullAddress,
-      },
-      shippingFee,
-      customerNotes: notes.trim() || undefined,
-    });
+        customerNotes: notes.trim() || undefined,
+        items,
+      });
 
-    if (res.success && res.orderRef) {
-      router.push(`/order-confirmed/${res.orderRef}`);
-    } else {
+      if (res.success && res.orderRef) {
+        clearCart();
+        router.push(`/order-confirmed/${res.orderRef}`);
+      } else {
+        setIsSubmitting(false);
+        setErrorMsg(
+          res.error ||
+            t(
+              "Đặt hàng thất bại. Vui lòng kiểm tra lại thông tin.",
+              "Order failed. Please verify details."
+            )
+        );
+      }
+    } catch (err: unknown) {
       setIsSubmitting(false);
-      setErrorMsg(res.error || t("Đặt hàng thất bại. Vui lòng thử lại.", "Order failed. Please try again."));
+      setErrorMsg(
+        err instanceof Error
+          ? err.message
+          : t("Lỗi kết nối khi gửi đơn hàng.", "Connection error while placing order.")
+      );
     }
   };
 
