@@ -14,6 +14,12 @@ jobs:
     name: Lint, Test & Build Verification
     runs-on: ubuntu-latest
     timeout-minutes: 15
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: "https://wejvdyczkvluphqvtrab.supabase.co"
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_dummy_ci_key"
+      SUPABASE_SERVICE_ROLE_KEY: "sb_secret_dummy_ci_key"
+      ENABLE_DEV_LOGIN: "false"
+      NODE_ENV: "production"
 
     steps:
       - name: Checkout Code
@@ -36,10 +42,4 @@ jobs:
 
       - name: Next.js Production Build
         run: npm run build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: "https://wejvdyczkvluphqvtrab.supabase.co"
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_dummy_ci_key"
-          SUPABASE_SERVICE_ROLE_KEY: "sb_secret_dummy_ci_key"
-          ENABLE_DEV_LOGIN: "false"
-          NODE_ENV: "production"
 
