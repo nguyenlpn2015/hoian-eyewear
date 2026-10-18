@@ -268,85 +268,105 @@ AS $$
 $$;
 
 -- 4.2. RLS: PROFILES
+DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 CREATE POLICY "Users can read own profile"
     ON public.profiles FOR SELECT
     USING (id = auth.uid() OR public.is_store_manager());
 
+DROP POLICY IF EXISTS "Store Managers can update profiles" ON public.profiles;
 CREATE POLICY "Store Managers can update profiles"
     ON public.profiles FOR UPDATE
     USING (public.is_store_manager());
 
+DROP POLICY IF EXISTS "Store Managers can insert profiles" ON public.profiles;
 CREATE POLICY "Store Managers can insert profiles"
     ON public.profiles FOR INSERT
     WITH CHECK (public.is_store_manager());
 
 -- 4.3. RLS: CATALOG (Categories, Products, Variants, Images)
+DROP POLICY IF EXISTS "Public can read active categories" ON public.categories;
 CREATE POLICY "Public can read active categories"
     ON public.categories FOR SELECT
     USING (true);
 
+DROP POLICY IF EXISTS "Managers manage categories" ON public.categories;
 CREATE POLICY "Managers manage categories"
     ON public.categories FOR ALL
     USING (public.is_store_manager());
 
+DROP POLICY IF EXISTS "Public can read active products" ON public.products;
 CREATE POLICY "Public can read active products"
     ON public.products FOR SELECT
     USING (is_active = true OR public.is_staff());
 
+DROP POLICY IF EXISTS "Managers manage products" ON public.products;
 CREATE POLICY "Managers manage products"
     ON public.products FOR ALL
     USING (public.is_store_manager());
 
+DROP POLICY IF EXISTS "Public can read active variants" ON public.product_variants;
 CREATE POLICY "Public can read active variants"
     ON public.product_variants FOR SELECT
     USING (is_active = true OR public.is_staff());
 
+DROP POLICY IF EXISTS "Managers manage variants" ON public.product_variants;
 CREATE POLICY "Managers manage variants"
     ON public.product_variants FOR ALL
     USING (public.is_store_manager());
 
+DROP POLICY IF EXISTS "Public can read product images" ON public.product_images;
 CREATE POLICY "Public can read product images"
     ON public.product_images FOR SELECT
     USING (true);
 
+DROP POLICY IF EXISTS "Managers manage images" ON public.product_images;
 CREATE POLICY "Managers manage images"
     ON public.product_images FOR ALL
     USING (public.is_store_manager());
 
 -- 4.4. RLS: INVENTORY (Balances & Movements)
+DROP POLICY IF EXISTS "Public can view available stock" ON public.inventory_balances;
 CREATE POLICY "Public can view available stock"
     ON public.inventory_balances FOR SELECT
     USING (true);
 
+DROP POLICY IF EXISTS "Staff can view all inventory balances" ON public.inventory_balances;
 CREATE POLICY "Staff can view all inventory balances"
     ON public.inventory_balances FOR SELECT
     USING (public.is_staff());
 
+DROP POLICY IF EXISTS "Managers can update inventory directly" ON public.inventory_balances;
 CREATE POLICY "Managers can update inventory directly"
     ON public.inventory_balances FOR UPDATE
     USING (public.is_store_manager());
 
+DROP POLICY IF EXISTS "Staff can read inventory movements" ON public.inventory_movements;
 CREATE POLICY "Staff can read inventory movements"
     ON public.inventory_movements FOR SELECT
     USING (public.is_staff());
 
 -- 4.5. RLS: ORDERS & ITEMS
+DROP POLICY IF EXISTS "Staff can view orders" ON public.orders;
 CREATE POLICY "Staff can view orders"
     ON public.orders FOR SELECT
     USING (public.is_staff());
 
+DROP POLICY IF EXISTS "Managers can update orders" ON public.orders;
 CREATE POLICY "Managers can update orders"
     ON public.orders FOR UPDATE
     USING (public.is_store_manager());
 
+DROP POLICY IF EXISTS "Staff can view order items" ON public.order_items;
 CREATE POLICY "Staff can view order items"
     ON public.order_items FOR SELECT
     USING (public.is_staff());
 
+DROP POLICY IF EXISTS "Staff can view status histories" ON public.order_status_history;
 CREATE POLICY "Staff can view status histories"
     ON public.order_status_history FOR SELECT
     USING (public.is_staff());
 
+DROP POLICY IF EXISTS "Staff can view payment histories" ON public.payment_status_history;
 CREATE POLICY "Staff can view payment histories"
     ON public.payment_status_history FOR SELECT
     USING (public.is_staff());

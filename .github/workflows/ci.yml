@@ -19,16 +19,15 @@ jobs:
       NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_dummy_ci_key"
       SUPABASE_SERVICE_ROLE_KEY: "sb_secret_dummy_ci_key"
       ENABLE_DEV_LOGIN: "false"
-      NODE_ENV: "production"
 
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      - name: Setup Node.js 20
+      - name: Setup Node.js 22
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: "npm"
 
       - name: Install Dependencies
@@ -42,4 +41,6 @@ jobs:
 
       - name: Next.js Production Build
         run: npm run build
+        env:
+          NODE_ENV: "production"
 
