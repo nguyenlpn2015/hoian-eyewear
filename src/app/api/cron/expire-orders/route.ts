@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
   const cronSecret = process.env.CRON_SECRET;
   const authHeader = request.headers.get("authorization");
 
-  if (cronSecret && authHeader !== `Bearer ${cronSecret}`) {
+  if (!cronSecret || authHeader !== `Bearer ${cronSecret}`) {
     logger.warn("Unauthorized attempt to access cron order expiration endpoint", {
       ip: request.headers.get("x-forwarded-for") || "unknown",
     });

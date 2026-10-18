@@ -214,7 +214,7 @@ export default function OrderConfirmedClientView({
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 pt-2">
-        <Link href={`/track-order?ref=${transferMemo}&phone=${order?.customerPhone || ""}`} className="flex-1">
+        <Link href={`/track-order?ref=${transferMemo}`} className="flex-1">
           <Button variant="secondary" size="lg" className="w-full">
             <Truck className="w-4 h-4 mr-1 text-[#D4AF37]" />
             <span>{t("Tra Cứu Tiến Độ Đơn Hàng", "Track Order Progress")}</span>

@@ -17,7 +17,9 @@ ON CONFLICT (id) DO UPDATE SET
     address = EXCLUDED.address,
     is_active = EXCLUDED.is_active;
 
--- 2. TÀI KHOẢN VÀ HỒ SƠ NHÂN VIÊN MẪU (TEST STAFF AUTH & PROFILES)
+-- 2. TÀI KHOẢN VÀ HỒ SƠ NHÂN VIÊN MẪU (TEST STAFF AUTH & PROFILES - LOCAL DEV ONLY)
+-- [BẢO MẬT]: Các tài khoản dưới đây CHỈ DÙNG CHO MÔI TRƯỜNG KIỂM THỬ NỘI BỘ (LOCAL DOCKER / PREVIEW).
+-- TRÊN MÔI TRƯỜNG SẢN XUẤT (PRODUCTION): Phải tạo tài khoản qua Supabase Auth Dashboard với mật khẩu riêng biệt.
 -- Sử dụng UUID cố định để kiểm thử phân quyền RBAC
 DO $$
 DECLARE
