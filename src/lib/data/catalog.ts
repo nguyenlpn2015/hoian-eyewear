@@ -212,7 +212,7 @@ export async function getProducts(options?: {
         product_images(*)
       `)
       .eq("is_active", true)
-      .order("display_order", { ascending: true });
+      .order("created_at", { ascending: true });
 
     if (options?.featuredOnly) {
       query = query.eq("is_featured", true);
